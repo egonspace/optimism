@@ -116,6 +116,8 @@ task('deposit-erc20', 'Deposits WETH9 onto L2.')
     '',
     types.string
   )
+  .addOptionalParam("startBlock", "start block number to scan", 0, types.int)
+  .addOptionalParam("messageIndex", "message index in case of multiple messages", 0, types.int)
   .setAction(async (args, hre) => {
     const signers = await hre.ethers.getSigners()
     if (signers.length === 0) {
@@ -221,10 +223,12 @@ task('deposit-erc20', 'Deposits WETH9 onto L2.')
     await depositTx.wait()
     console.log(`ERC20 deposited - ${depositTx.hash}`)
 
+    let startBlock = await messenger.getStartBlockToScan(hre.ethers.provider, args.startBlock)
+
     // Deposit might get reorged, wait 30s and also log for reorgs.
     let prevBlockHash: string = ''
     for (let i = 0; i < 30; i++) {
-      const messageReceipt = await messenger.waitForMessageReceipt(depositTx)
+      const messageReceipt = await messenger.waitForMessageReceipt(depositTx, startBlock, args.messageIndex)
       if (messageReceipt.receiptStatus !== 1) {
         console.log(`Deposit failed, retrying...`)
       }
@@ -289,17 +293,17 @@ task('deposit-erc20', 'Deposits WETH9 onto L2.')
     }
 
     setInterval(async () => {
-      const currentStatus = await messenger.getMessageStatus(withdraw)
+      const currentStatus = await messenger.getMessageStatus(withdraw, startBlock, args.messageIndex)
       console.log(`Message status: ${MessageStatus[currentStatus]}`)
     }, 3000)
 
     const now = Math.floor(Date.now() / 1000)
 
     console.log('Waiting for message to be able to be proved')
-    await messenger.waitForMessageStatus(withdraw, MessageStatus.READY_TO_PROVE)
+    await messenger.waitForMessageStatus(withdraw, MessageStatus.READY_TO_PROVE, startBlock, args.messageIndex)
 
     console.log('Proving withdrawal...')
-    const prove = await messenger.proveMessage(withdraw)
+    const prove = await messenger.proveMessage(withdraw, args.messageIndex)
     const proveReceipt = await prove.wait()
     console.log(proveReceipt)
     if (proveReceipt.status !== 1) {
@@ -309,12 +313,14 @@ task('deposit-erc20', 'Deposits WETH9 onto L2.')
     console.log('Waiting for message to be able to be relayed')
     await messenger.waitForMessageStatus(
       withdraw,
-      MessageStatus.READY_FOR_RELAY
+      MessageStatus.READY_FOR_RELAY,
+      startBlock,
+      args.messageIndex
     )
 
     console.log('Finalizing withdrawal...')
     // TODO: Update SDK to properly estimate gas
-    const finalize = await messenger.finalizeMessage(withdraw, {
+    const finalize = await messenger.finalizeMessage(withdraw, args.messageIndex, {
       overrides: { gasLimit: 500_000 },
     })
     const finalizeReceipt = await finalize.wait()

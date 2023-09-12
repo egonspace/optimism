@@ -573,6 +573,9 @@ importers:
       '@nomiclabs/hardhat-waffle':
         specifier: ^2.0.1
         version: 2.0.1(@nomiclabs/hardhat-ethers@2.0.2)(ethereum-waffle@3.4.0)(ethers@5.7.1)(hardhat@2.9.6)
+      '@types/readline-sync':
+        specifier: ^1.4.4
+        version: 1.4.4
       chai-as-promised:
         specifier: ^7.1.1
         version: 7.1.1(chai@4.3.7)
@@ -597,6 +600,9 @@ importers:
       nyc:
         specifier: ^15.1.0
         version: 15.1.0
+      readline-sync:
+        specifier: ^1.4.10
+        version: 1.4.10
       typedoc:
         specifier: ^0.22.13
         version: 0.22.13(typescript@4.9.3)
@@ -3673,6 +3679,10 @@ packages:
 
   /@types/range-parser@1.2.4:
     resolution: {integrity: sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==}
+    dev: true
+
+  /@types/readline-sync@1.4.4:
+    resolution: {integrity: sha512-cFjVIoiamX7U6zkO2VPvXyTxbFDdiRo902IarJuPVxBhpDnXhwSaVE86ip+SCuyWBbEioKCkT4C88RNTxBM1Dw==}
     dev: true
 
   /@types/resolve@0.0.8:
@@ -15410,6 +15420,11 @@ packages:
     engines: {node: '>=8.10.0'}
     dependencies:
       picomatch: 2.3.0
+    dev: true
+
+  /readline-sync@1.4.10:
+    resolution: {integrity: sha512-gNva8/6UAe8QYepIQH/jQ2qn91Qj0B9sYjMBBs3QOB8F2CXcKgLxQaJRP76sWVRQt+QU+8fAkCbCvjjMFu7Ycw==}
+    engines: {node: '>= 0.8.0'}
     dev: true
 
   /rechoir@0.6.2:

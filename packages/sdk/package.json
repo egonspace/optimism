@@ -51,7 +51,9 @@
     "vitest": "^0.28.3",
     "zod": "^3.11.6",
     "viem": "^0.3.30",
-    "isomorphic-fetch": "^3.0.0"
+    "isomorphic-fetch": "^3.0.0",
+    "@types/readline-sync": "^1.4.4",
+    "readline-sync": "^1.4.10"
   },
   "dependencies": {
     "@eth-optimism/contracts": "0.6.0",

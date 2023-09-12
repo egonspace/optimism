@@ -50,6 +50,8 @@ task('deposit-eth', 'Deposits ether to L2.')
     types.string
   )
   .addOptionalParam('withdrawAmount', 'Amount to withdraw', '', types.string)
+  .addOptionalParam("startBlock", "start block number to scan", 0, types.int)
+  .addOptionalParam("messageIndex", "message index in case of multiple messages", 0, types.int)
   .setAction(async (args, hre) => {
     const signers = await hre.ethers.getSigners()
     if (signers.length === 0) {
@@ -200,8 +202,13 @@ task('deposit-eth', 'Deposits ether to L2.')
     console.log(`Sending ${formatEther(amount)} ether`)
     const ethDeposit = await messenger.depositETH(amount, { recipient: to })
     console.log(`Transaction hash: ${ethDeposit.hash}`)
+
+    let startBlock = await messenger.getStartBlockToScan(hre.ethers.provider, args.startBlock)
+
     const depositMessageReceipt = await messenger.waitForMessageReceipt(
-      ethDeposit
+      ethDeposit,
+      startBlock,
+      args.messageIndex,
     )
     if (depositMessageReceipt.receiptStatus !== 1) {
       throw new Error('deposit failed')
@@ -289,21 +296,23 @@ task('deposit-eth', 'Deposits ether to L2.')
     console.log('Waiting to be able to prove withdrawal')
 
     const proveInterval = setInterval(async () => {
-      const currentStatus = await messenger.getMessageStatus(ethWithdrawReceipt)
+      const currentStatus = await messenger.getMessageStatus(ethWithdrawReceipt, startBlock, args.messageIndex)
       console.log(`Message status: ${MessageStatus[currentStatus]}`)
     }, 3000)
 
     try {
       await messenger.waitForMessageStatus(
         ethWithdrawReceipt,
-        MessageStatus.READY_TO_PROVE
+        MessageStatus.READY_TO_PROVE,
+        startBlock,
+        args.messageIndex
       )
     } finally {
       clearInterval(proveInterval)
     }
 
     console.log('Proving eth withdrawal...')
-    const ethProve = await messenger.proveMessage(ethWithdrawReceipt)
+    const ethProve = await messenger.proveMessage(ethWithdrawReceipt, args.messageIndex)
     console.log(`Transaction hash: ${ethProve.hash}`)
     const ethProveReceipt = await ethProve.wait()
     if (ethProveReceipt.status !== 1) {
@@ -314,21 +323,23 @@ task('deposit-eth', 'Deposits ether to L2.')
     console.log('Waiting to be able to finalize withdrawal')
 
     const finalizeInterval = setInterval(async () => {
-      const currentStatus = await messenger.getMessageStatus(ethWithdrawReceipt)
+      const currentStatus = await messenger.getMessageStatus(ethWithdrawReceipt, startBlock, args.messageIndex)
       console.log(`Message status: ${MessageStatus[currentStatus]}`)
     }, 3000)
 
     try {
       await messenger.waitForMessageStatus(
         ethWithdrawReceipt,
-        MessageStatus.READY_FOR_RELAY
+        MessageStatus.READY_FOR_RELAY,
+        startBlock,
+        args.messageIndex
       )
     } finally {
       clearInterval(finalizeInterval)
     }
 
     console.log('Finalizing eth withdrawal...')
-    const ethFinalize = await messenger.finalizeMessage(ethWithdrawReceipt)
+    const ethFinalize = await messenger.finalizeMessage(ethWithdrawReceipt, args.messageIndex)
     console.log(`Transaction hash: ${ethFinalize.hash}`)
     const ethFinalizeReceipt = await ethFinalize.wait()
     if (ethFinalizeReceipt.status !== 1) {
